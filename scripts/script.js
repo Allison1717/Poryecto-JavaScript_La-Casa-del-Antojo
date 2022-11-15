@@ -1,108 +1,136 @@
-//const carrito = [];
+let antojosJSON=[];
+let dolarCompra;
+
 let totalCarrito;
 let contenedor = document.getElementById("misantojos");
 let botonFinalizar = document.getElementById("finalizar");
-let carrito = JSON.parse(localStorage.getItem("carrito")) || []
-if (carrito.length != 0) {
-    console.log("Recuperando carro")
-    
-    dibujarTabla();
-    
-}
+let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+
+(carrito.length != 0)&&dibujarTabla();
+
+
 function dibujarTabla(){
-    for(const antojos of carrito){
+    for(const antojo of carrito){
         document.getElementById("tablabody").innerHTML += `
         <tr>
-            <td>${antojos.id}</td>
-            <td>${antojos.nombre}</td>
-            <td>${antojos.precio}</td>
+            <td>${antojo.id}</td>
+            <td>${antojo.nombre}</td>
+            <td>${antojo.precio}</td>
+            <td><button class="btn btn-light" onclick="eliminar(event)">🗑️</button></td>
         </tr>
     `;
     }
-    totalCarrito = carrito.reduce((acumulador,antojos)=> acumulador + antojos.precio,0);
+    totalCarrito = carrito.reduce((acumulador,antojo)=> acumulador + antojo.precio,0);
     let infoTotal = document.getElementById("total");
-    infoTotal.innerText="Total a pagar S/ "+totalCarrito;
+    infoTotal.innerText="Total a pagar $: "+totalCarrito;
 }
-function renderizarProds() {
-    for (const antojo of antojos) {
+
+function renderizarProds(){
+    for(const antojo of antojosJSON){
         contenedor.innerHTML += `
-      
-            <div class="card me-2 shadow-lg p-3 mb-5 bg-body rounded" style="width: 17rem;">
-                <img src=${antojo.foto} class="card-img-top" alt="..." height="300px" width="500px">
+            <div class="card col-sm-2">
+                <img src=${antojo.foto} class="card-img-top" alt="...">
                 <div class="card-body">
-                    <h5 class="card-title text-center text-secondary letraNavBar">${antojo.id}</h5>
-                    <h4 class="card-text text-center letraNavBar">${antojo.nombre}</h4>
-                    <h2 class="card-text text-center text-success letraNavBar">S/. ${antojo.precio}</h2>
-                    <p class="card-text text-center letraNavBar"><small class="text-muted">Disponible</small></p> 
-                    <button id="btn${antojo.id}" type="button" class="btn btn-outline-success letraNavBar">Comprar</button>
-                    <img src="../imagenes/carrito-de-compras.png" alt="carrito-de-compras" height="50px" width="50px">        
+                    <h5 class="card-title">${antojo.id}</h5>
+                    <p class="card-text">${antojo.nombre}</p>
+                    <p class="card-text">S/.${(antojo.precio)}</p>
+                    <button id="btn${antojo.id}" class="btn btn-primary">Comprar</button>
                 </div>
             </div>
-        
         `;
     }
-
-
-    //EVENTOS
-    antojos.forEach(antojos => {
-        //evento para cada boton
-        document.getElementById(`btn${antojos.id}`).addEventListener("click", function () {
-            agregarAlCarrito(antojos);
+    antojosJSON.forEach(antojo => {
+        document.getElementById(`btn${antojo.id}`).addEventListener("click",function(){
+            agregarAlCarrito(antojo);
         });
     })
 }
-
-renderizarProds();
-
-function agregarAlCarrito(antojosComprado) {
-    carrito.push(antojosComprado);
+function agregarAlCarrito(antojoComprado){
+    carrito.push(antojoComprado);
     console.table(carrito);
     Swal.fire({
-        title: antojosComprado.nombre,
+        title: antojoComprado.nombre,
         text: 'Agregado al carrito',
-        imageUrl: antojosComprado.foto,
-        imageWidth: 500,
-        imageHeight: 300,
-        imageAlt: antojosComprado.nombre,
+        imageUrl: antojoComprado.foto,
+        imageWidth: 200,
+        imageHeight: 200,
+        imageAlt: antojoComprado.nombre,
         showConfirmButton: false,
         timer: 1500
-    })
+      })
     document.getElementById("tablabody").innerHTML += `
         <tr>
-            <td>${antojosComprado.id}</td>
-            <td>${antojosComprado.nombre}</td>
-            <td>${antojosComprado.precio}</td>
-            <td><button><i class="bi bi-trash3-fill"></i></button> </td>
+            <td>${antojoComprado.id}</td>
+            <td>${antojoComprado.nombre}</td>
+            <td>${antojoComprado.precio}</td>
+            <td><button class="btn btn-danger" onclick="eliminar(event)"><i class="bi bi-trash3-fill"></i></button></td>
         </tr>
     `;
-    totalCarrito = carrito.reduce((acumulador, antojos) => acumulador + antojos.precio, 0);
+    totalCarrito = carrito.reduce((acumulador,antojo)=> acumulador + antojo.precio,0);
     let infoTotal = document.getElementById("total");
-    infoTotal.innerText = "Total a pagar S/ " + totalCarrito;
+    infoTotal.innerText="Total a pagar S/.: "+totalCarrito;
+    localStorage.setItem("carrito",JSON.stringify(carrito));
+}
+
+//Para eliminar los productos agregados al carrito
+function eliminar(ev){
+    console.log(ev);
+    let fila = ev.target.parentElement.parentElement;
+    console.log(fila);
+    let id = fila.children[0].innerText;
+    console.log(id);
+    let indice = carrito.findIndex(antojo => antojo.id == id);
+    console.log(indice)
+    //eliminar producto del carrito
+    carrito.splice(indice,1);
+    console.table(carrito);
+    //Eliminar la fila de la tabla
+    fila.remove();
+    //Una vez eliminado se tiene que volver a calcular el total a pagar
+    let preciosAcumulados = carrito.reduce((acumulador,antojo)=>acumulador+antojo.precio,0);
+    total.innerText="Total a pagar S/. : "+preciosAcumulados;
     //storage
-    localStorage.setItem("carrito", JSON.stringify(carrito));
+    localStorage.setItem("carrito",JSON.stringify(carrito));
 }
 
+//Con esta funcion se va a aobtener los productos.json
+async function obtenerJSON() {
+    const URLJSON="../scripts/antojos.json";
+    const resp = await fetch(URLJSON);
+    const data = await resp.json();
+    antojosJSON = data;   
+    renderizarProds();
+}
+obtenerJSON()
+
+//Cerrando al compra
 botonFinalizar.onclick = () => {
+    if(carrito.length==0){
+        Swal.fire({
+            title: 'CARRITO VACIO',
+            text: 'COMPRE ALGO, DE LO CONTRARIO PASE A LA SIGUIENTE PAGINA',
+            icon: 'error',
+            showConfirmButton: false,
+            timer: 1500
+          })
+    }else{
+        carrito = [];
+        document.getElementById("tablabody").innerHTML="";
+        let infoTotal = document.getElementById("total");
+        infoTotal.innerText="Total a pagar S/.: ";
+        Toastify({
+            text: "En breves momentos recibira un email de confirmacion",
+            duration: 3000,
+            gravity: 'bottom',
+            position: 'left',
+            style: {
+                background: 'linear-gradient(to right, #00b09b, #96c92d)'
+            }
+        }).showToast();
+
+       
+        localStorage.removeItem("carrito");
+    }
     
-    carrito = [];
-    document.getElementById("tablabody").innerHTML = "";
-    let infoTotal = document.getElementById("total");
-    infoTotal.innerText = "Total a pagar S/ ";
-    
-    Toastify({
-        text: "Pronto recibirá un mail de confirmacion",
-        duration: 3000,
-        gravity: 'bottom',
-        position: 'center',
-        style: {
-            background: 'linear-gradient(to right, #00b09b, #96c92d)'
-        }
-    }).showToast();
-    
-    localStorage.removeItem("carrito"); 
 }
-
-
-
-
 
